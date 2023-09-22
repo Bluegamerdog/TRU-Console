@@ -1,0 +1,42 @@
+import { Guardsman } from "index";
+import {
+    ChatInputCommandInteraction, Colors, EmbedBuilder,
+} from "discord.js";
+import { getServerConfigs } from '../../../../utils/prismaUtils.js';
+import { permissionsCheck } from '../../../../utils/roleFunctions.js'
+
+export default class ConfigsViewSubcommand implements ICommand {
+    name: Lowercase<string> = "import";
+    description: string = "no idea how to make this";
+    guardsman: Guardsman;
+
+    constructor(guardsman: Guardsman) {
+        this.guardsman = guardsman;
+    }
+
+    async execute(interaction: ChatInputCommandInteraction<"cached">): Promise<void> {
+        const guild = interaction.guild;
+
+        const serverConfigs = await getServerConfigs(guild.id)
+        if (!serverConfigs) {
+            this.guardsman.bot.emit("missingServerConfigs", interaction)
+            return
+        }
+        const target = await interaction.guild.roles.fetch(serverConfigs.commandRoleID)
+        if (!target) {
+            this.guardsman.bot.emit("invalidServerConfigs", interaction)
+            return
+        }
+        const permission = permissionsCheck("rp", interaction.member, target, interaction)
+        if (!permission) {
+            this.guardsman.bot.emit("missingPermissions", interaction);
+            return
+        }
+
+        let disabled = true
+        if (disabled) {
+            this.guardsman.bot.emit("incompleteCommand", interaction)
+            return
+        }
+    }
+}

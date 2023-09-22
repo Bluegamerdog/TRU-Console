@@ -1,0 +1,93 @@
+import math
+import re
+import discord
+from discord.ext import commands
+from discord import app_commands
+from discord import ui
+from Database_Functions.MaindbFunctions import *
+from Functions.mainVariables import *
+from Functions.permFunctions import *
+from Functions.randFunctions import (attendance_points, co_host_points, supervisor_points, ringleader_points, getrank, get_quota, get_point_quota)
+from Database_Functions.UserdbFunction import (add_points, get_points, db_register_get_data, set_days_onloa)
+
+### REMOVE? ###
+
+
+class PatrolrequestButtons(discord.ui.View):
+    def __init__(self, amount:int):
+        super().__init__()
+        self.amount = amount
+        discord.ui.View.timeout = None
+    
+    @discord.ui.button(emoji="<:dsbbotAccept:1073668738827694131>", label="Accept", style=discord.ButtonStyle.grey)
+    async def AcceptButton(self, interaction:discord.Interaction, button:discord.ui.Button):
+        if not DSBPC_A(interaction.user):
+            return
+        else:
+            try:
+                add_points(interaction.message.interaction.user.id, self.amount)
+                embed = interaction.message.embeds[0]
+                embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotAccept:1073668738827694131>")
+                embed.color=DarkGreenCOL
+                await interaction.message.edit(embed=embed, view=None)
+                embed=discord.Embed(color=SuccessCOL,title="<:dsbbotAccept:1073668738827694131> Point Request Accepted!", description=f"Your point request has been **accepted** and {self.amount} points have been added. You now have **{get_points(interaction.message.interaction.user.id)}** points. 😎")
+                embed.set_footer(icon_url=interaction.user.avatar, text=f"Reviewed by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
+                await interaction.response.send_message(f"{interaction.message.interaction.user.mention}", embed=embed)
+            except Exception as e:
+                await interaction.response.send_message(embed=discord.Embed(title="Failed to proccess request!", description=f"`Error:` {e}"), ephemeral=True)
+
+    @discord.ui.button(emoji="<:dsbbotDeny:1073668785262833735>", label="Decline", style=discord.ButtonStyle.grey)
+    async def DenyButton(self, interaction:discord.Interaction, button:discord.ui.Button):
+        if not DSBPC_A(interaction.user):
+            return
+        else:
+            embed = interaction.message.embeds[0]
+            embed.title= embed.title.replace("<:dsbbotUnderReview:953642762857771138>", "<:dsbbotDeny:1073668785262833735>")
+            embed.color=DarkRedCOL
+            await interaction.message.edit(embed=embed, view=None)
+            embed=discord.Embed(color=ErrorCOL, title="<:dsbbotDeny:1073668785262833735> Point Request Denied!", description=f"Your point request has been **denied**. The person who reviewed it will provide you with the reason shortly. 😄")
+            embed.set_footer(icon_url=interaction.user.avatar, text=f"Reviewed by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
+            await interaction.response.send_message(f"{interaction.message.interaction.user.mention}", embed=embed)
+
+    @discord.ui.button(emoji="❌", label="Cancel", style=discord.ButtonStyle.grey)
+    async def CancelButton(self, interaction:discord.Interaction, button:discord.ui.Button):
+        if interaction.user == interaction.message.interaction.user:
+            embed = interaction.message.embeds[0]
+            embed.title="<:dsbbotFailed:953641818057216050> Cancelled __Patrol__ Point Request!"
+            embed.clear_fields()
+            embed.set_footer(icon_url=interaction.user.avatar, text=f"Cancelled by {interaction.user.display_name} • {datetime.now().strftime('%d.%m.%y at %H:%M')}")
+            embed.color=HRCommandsCOL
+            await interaction.message.edit(embed=embed, view=None)
+        else:
+            return
+            
+
+
+class RequestCmds(commands.GroupCog, group_name='request'):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        
+
+    @app_commands.command(name="patrol", description="Request points for your patrols using this command.")
+    @app_commands.describe(log="Message link to .qb findlog message from #bot-commands", length="The length of your patrol in minutes")
+    async def request_log(self, interaction:discord.Interaction, length:int, log:str):
+        if not DSBMEMBER(interaction.user):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Missing permissions!", description=f"Only DSB Private First Class or above may interact with DSB Helper."), ephemeral=True)
+        if not db_register_get_data(interaction.user.id):
+            return await interaction.response.send_message(embed = discord.Embed(title=f"<:dsbbotFailed:953641818057216050> Interaction failed!", description="You were not found in registry database.\n*Use `/db register` to register.*", color=ErrorCOL), ephemeral=True)   
+        message_link_pattern = re.compile(r"https://(?:ptb\.)?discord(?:app)?\.com/channels/(\d+)/(\d+)/(\d+)")
+        if not message_link_pattern.match(log):
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Invalid proof!", description=f"You must provide a Discord message link."), ephemeral=True)
+        if length < 30 or length > 541:
+            return await interaction.response.send_message(embed=discord.Embed(color=ErrorCOL, title="<:dsbbotFailed:953641818057216050> Invalid length!", description=f"The length of your patrol must be at least 30 minutes." if length < 30 else "Your patrol should not be over 9hs or 540 minutes..."), ephemeral=True)
+        else:
+            if length <= 60:
+                amount = 2
+            else:
+                amount = 2
+                extra = math.floor((length - 60+7) / 30)
+                amount += extra
+        embed = discord.Embed(color=TRUCommandCOL, title=f"<:dsbbotUnderReview:953642762857771138> __Patrol__ Point Request - {interaction.user.display_name}")
+        embed.add_field(name="", value="")
+        embed.add_field(name="", value=f"**{interaction.user.display_name}** has requested **{amount} points** for patrolling **{length} minutes**.\n\n→ **[Log Message]({log})**", inline=False)
+        await interaction.response.send_message(embed = embed, view=PatrolrequestButtons(amount))

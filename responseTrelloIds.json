@@ -1,0 +1,18 @@
+{
+  "response_board_id": "6437e2978421d13cd9394a5d",
+
+  "default_list": "6437e2b7f6426e174d655d06",
+  "monday_list": "6437e49e10e8a03fa3dac765",
+  "tuesday_list": "6437e4a0c604da6927e42570",
+  "wednesday_list": "6437e4a282479e4e3039c33c",
+  "thursday_list": "6437e4a686c318850c172c2c",
+  "friday_list": "6437e4a76bfd790d5bdc6738",
+  "saturday_list": "6437e4aa35c94b574d3c8c47",
+  "sunday_list": "64386095c6f440093121fdd1",
+
+  "spontaneous_label": "6437e2974720c87ca4fe3e98",
+  "schedulued_label": "6437eb47965e94c2c8cb2eb3",
+  "cancelled_label": "6437e432cdf097cffdc2fda1"
+}
+
+

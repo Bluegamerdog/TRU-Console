@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider             = "prisma-client-js"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:Databases/dev.db"
+}
+
+model operator {
+  discord_id  String         @id @unique
+  username    String         @unique
+  truRank     String
+  roblox_id   String         @unique
+  activeLog   Boolean        @default(false)
+  activeLogID String         @default("NULL")
+  response    responseData[]
+}
+
+model quotas {
+  rankName            String  @id @unique
+  logRequirement      Int
+  responseRequirement Int
+  quotaActive         Boolean @default(false)
+}
+
+model quotaBlocks {
+  blockNum       Int     @id @unique
+  unix_starttime String
+  unix_endtime   String
+  blockActive    Boolean
+}
+
+model responseData {
+  //use discord message ID of the announcement as unique identifier (saves time :steamhappy:)
+  responseID         String    @id @unique
+  responseType       String
+  timeStarted        String
+  timeEnded          String
+  started            Boolean
+  cancelled          Boolean
+  spontaneous        Boolean
+  trelloCardID       String
+  Host               operator? @relation(fields: [operativeDiscordID], references: [discord_id])
+  operativeDiscordID String?
+  operativeName      String?
+}
+
+model ranks {
+  rankName      String @unique
+  discordRoleID String @id @unique
+  RobloxRankID  String @unique
+  guildID       String @default("Null")
+}
+
+model serverSetup {
+  serverID                  String @id @unique
+  responsePingRoleID        String
+  responseAnnounceChannelID String
+  memberRoleID              String
+  hostRoleID                String
+  commandRoleID             String
+  developerRoleID           String
+}
+
+model verificationBinds {
+  id        Int    @id @default(autoincrement())
+  guild_id  String
+  role_id   String
+  role_data String
+}
+
+model pendingVerification {
+  id         Int    @id @default(autoincrement())
+  discord_id String
+  token      String
+}
+
+model strikes {
+  id         String   @id @unique
+  recieverID String
+  reason     String
+  timestamp  String
+  giverID    String
+}
+
+model backupResponses {
+  responseRequestID BigInt @id @unique
+  responderID       String
+  requestStatus     String @default("Pending")
+  timestamp         String
+  revieweeID        String @default("Null")
+}
+
+model aptureJokeCounter {
+  id     Int    @id @default(autoincrement())
+  amount Int
+}
